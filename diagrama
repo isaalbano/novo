@@ -1,0 +1,38 @@
+from diagrams import Diagram, Cluster
+from diagrams.aws.compute import Lambda
+from diagrams.aws.database import Dynamodb
+from diagrams.aws.integration import SQS
+from diagrams.aws.network import APIGateway
+from diagrams.aws.security import Cognito
+from diagrams.onprem.client import Users
+from diagrams.onprem.compute import Server
+from diagrams.onprem.inmemory import Redis
+from diagrams.saas.payment import Stripe
+
+with Diagram("Arquitetura do Sistema de Reservas", show=False):
+    user = Users("Usuário")
+    
+    with Cluster("Frontend"):
+        web = Server("Aplicação Web")
+        mobile = Server("Aplicativo Mobile")
+    
+    with Cluster("Backend - APIs"):
+        api_gateway = APIGateway("API Gateway")
+        auth = Cognito("Autenticação")
+        booking_service = Lambda("Serviço de Reservas")
+        payment_service = Lambda("Serviço de Pagamentos")
+        notification_service = Lambda("Serviço de Notificações")
+        cache = Redis("Cache - Redis")
+    
+    with Cluster("Banco de Dados"):
+        db = Dynamodb("Banco de Dados de Reservas")
+    
+    with Cluster("Integrações"):
+        payment_provider = Stripe("Gateway de Pagamento")
+        queue = SQS("Fila de Processamento")
+    
+    user >> [web, mobile] >> api_gateway >> [auth, booking_service, payment_service, notification_service]
+    booking_service >> queue >> db
+    payment_service >> payment_provider
+    notification_service >> queue
+    booking_service >> cache
